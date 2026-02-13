@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lì xì May Mắn</title>
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at top, #7f1d1d, #b91c1c);
+    font-family: system-ui, -apple-system, sans-serif;
+    color: #fff;
+    overflow: hidden;
+  }
+  h1 { font-size: clamp(20px, 5vw, 28px); margin-bottom: 10px; text-align: center; }
+
+  .wheel-wrap { position: relative; width: min(85vw, 360px); aspect-ratio: 1 / 1; z-index: 2; }
+  canvas#wheel { width: 100%; height: 100%; border-radius: 50%; background: #fff7ed; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+
+  .center-pointer {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%) rotate(0deg);
+    transform-origin: 50% 100%;
+    width: 0; height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-bottom: 28px solid gold;
+    z-index: 10; filter: drop-shadow(0 3px 4px rgba(0,0,0,.5));
+  }
+
+  button {
+    margin-top: 14px; padding: 12px 26px; border-radius: 999px; border: none;
+    font-weight: 700; font-size: 16px;
+    background: linear-gradient(45deg, #fde047, #fb7185);
+    color: #7f1d1d; cursor: pointer;
+    box-shadow: 0 6px 15px rgba(0,0,0,.4);
+  }
+
+  #flow { display:flex; flex-direction:column; align-items:center; gap:10px; z-index: 2; }
+  .mode { display:flex; gap:10px; }
+  .note { font-size:12px; opacity:.85; }
+
+  .played-note {
+    margin-top: 10px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(0,0,0,.25);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: center; justify-content: center; z-index: 999; }
+  .modal.show { display: flex; }
+  .modal-content {
+    background: linear-gradient(135deg, #fff7ed, #fde68a); color: #7f1d1d;
+    padding: 20px 22px; border-radius: 16px; text-align: center; width: min(85vw, 320px);
+    box-shadow: 0 10px 30px rgba(0,0,0,.4);
+    animation: pop .4s ease;
+  }
+  @keyframes pop { from{transform:scale(.7);opacity:0} to{transform:scale(1);opacity:1} }
+
+  #fireworks { position: fixed; inset: 0; pointer-events: none; z-index: 3; }
+
+  .lixi {
+    position: fixed; top: -10vh; width: 34px; height: 46px;
+    background: linear-gradient(180deg, #dc2626, #991b1b);
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(0,0,0,.35);
+    animation: lixiFall linear infinite;
+    display:flex;align-items:center;justify-content:center;
+    color:#fde047;font-weight:900;font-size:12px;
+    z-index: 4;
+  }
+  @keyframes lixiFall { to { transform: translateY(110vh) rotate(180deg); } }
+
+  .jackpot-flash {
+    position: fixed; inset: 0; background: white; opacity: 0;
+    pointer-events: none; z-index: 10000;
+    animation: jackpotFlash .12s ease-in-out;
+  }
+  @keyframes jackpotFlash {
+    0% { opacity: 0; }
+    50% { opacity: .95; }
+    100% { opacity: 0; }
+  }
+
+  .petal {
+    position: fixed;
+    top: -10vh;
+    width: 18px;
+    height: 18px;
+    background: radial-gradient(circle at 30% 30%, #ffd1dc, #fb7185);
+    border-radius: 60% 40% 60% 40%;
+    opacity: 0.85;
+    pointer-events: none;
+    animation: petalFall linear infinite;
+    z-index: 1;
+    filter: blur(0.2px);
+  }
+  @keyframes petalFall {
+    to { transform: translateY(120vh) rotate(360deg); }
+  }
+</style>
+</head>
+<body>
+
+<h1>🧧 Lì xì nhân phẩm 🧧</h1>
+
+<div id="flow">
+  <button onclick="startFlow()">Test nhân phẩm đầu năm</button>
+  <div id="modePanel" style="display:none">
+    <div class="mode">
+      <button onclick="spin('warmup')">🎯 Quay thử</button>
+      <button id="realBtn" onclick="spin('real')">🔥 Chơi luôn</button>
+    </div>
+    <div class="note">Mỗi người tối đa 1 lần chơi thật</div>
+    <div id="playedNote" class="played-note" style="display:none">Bạn đã chơi hôm nay</div>
+  </div>
+</div>
+
+<div class="wheel-wrap" id="wheelWrap" style="display:none">
+  <canvas id="wheel"></canvas>
+  <div class="center-pointer" id="pointer"></div>
+</div>
+
+<div id="winModal" class="modal">
+  <div class="modal-content">
+    <div style="font-size:22px;font-weight:900">🎉 Hép bi liu dia! 🎉</div>
+    <div id="winText" style="font-size:26px;font-weight:900;margin:10px 0"></div>
+    <button onclick="closeModal()">OK</button>
+  </div>
+</div>
+
+<canvas id="fireworks"></canvas>
+
+<audio id="bgMusic" loop preload="auto">
+  <source src="BGM.m4a" type="audio/mp4">
+</audio>
+
+<script>
+/* HOA ĐÀO RƠI */
+function startPetals(){
+  setInterval(()=>{
+    const p = document.createElement("div");
+    p.className = "petal";
+    p.style.left = Math.random() * 100 + "vw";
+    p.style.animationDuration = 6 + Math.random() * 6 + "s";
+    p.style.transform = `rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(), 14000);
+  }, 350);
+}
+startPetals();
+</script>
+
+<script>
+let audioCtx;
+function ensureAudioCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+const bgMusic = document.getElementById("bgMusic");
+function enableMusicOnce(){
+  bgMusic.volume = 0.6;
+  bgMusic.currentTime = 0;
+  bgMusic.play().catch(()=>{});
+  window.removeEventListener("click", enableMusicOnce);
+  window.removeEventListener("touchstart", enableMusicOnce);
+}
+window.addEventListener("click", enableMusicOnce);
+window.addEventListener("touchstart", enableMusicOnce);
+
+function playImpactSound(strength = 0.3, isFinal = false){
+  ensureAudioCtx();
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = "square";
+  o.frequency.setValueAtTime(isFinal ? 160 : 700 + strength * 600, audioCtx.currentTime);
+  g.gain.setValueAtTime(isFinal ? 0.35 : Math.min(0.22, 0.06 + strength * 0.16), audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (isFinal ? 0.14 : 0.05));
+  o.connect(g).connect(audioCtx.destination);
+  o.start(); o.stop(audioCtx.currentTime + (isFinal ? 0.16 : 0.06));
+}
+
+function playJackpotSound(){
+  ensureAudioCtx();
+  const o1 = audioCtx.createOscillator();
+  const o2 = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o1.type = "sine"; o2.type = "triangle";
+  o1.frequency.setValueAtTime(880, audioCtx.currentTime);
+  o2.frequency.setValueAtTime(440, audioCtx.currentTime);
+  g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.35, audioCtx.currentTime + 0.05);
+  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.2);
+  o1.connect(g); o2.connect(g); g.connect(audioCtx.destination);
+  o1.start(); o2.start();
+  o1.stop(audioCtx.currentTime + 1.2);
+  o2.stop(audioCtx.currentTime + 1.2);
+}
+
+function startFlow(){
+  document.getElementById("modePanel").style.display = "block";
+}
+
+const rewards = ["Cái nịt","1 cá","2 cá","5 cá","10 cá","20 cá","50 cá","100 cá","200 cá","Cái nịt","500 cá","Cái nịt"];
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const pointer = document.getElementById("pointer");
+
+function resizeCanvas(){
+  const size = Math.min(window.innerWidth * 0.85, 360);
+  canvas.width = size; canvas.height = size;
+  drawWheel();
+}
+window.addEventListener("resize", resizeCanvas);
+
+let rotation = 0, spinning = false;
+let lastSliceIndex = -1;
+
+// HIGHLIGHT
+let highlightedIndex = -1;
+let highlightPulse = 0;
+
+let pointerAngle = 0;
+let pointerVel = 0;
+const SPRING_K = 0.22;
+const DAMPING = 0.72;
+
+function updatePointerPhysics(){
+  const target = 0;
+  const force = -SPRING_K * (pointerAngle - target);
+  pointerVel += force;
+  pointerVel *= DAMPING;
+  pointerAngle += pointerVel;
+  pointer.style.transform = `translate(-50%, -50%) rotate(${pointerAngle}rad)`;
+}
+
+function drawWheel(){
+  const c = canvas.width/2, r = c, slice = 2*Math.PI/rewards.length;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  rewards.forEach((t,i)=>{
+    const s = i*slice + rotation - Math.PI/2;
+
+    ctx.beginPath();
+    ctx.moveTo(c,c);
+    ctx.arc(c,c,r,s,s+slice);
+    ctx.fillStyle = i%2?"#fecaca":"#fde68a";
+    ctx.fill();
+
+    if(i === highlightedIndex){
+      const pulse = 0.5 + Math.sin(highlightPulse) * 0.5;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(c,c);
+      ctx.arc(c,c,r,s,s+slice);
+      ctx.fillStyle = `rgba(255,215,0,${0.25 + pulse*0.35})`;
+      ctx.fill();
+      ctx.restore();
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = `rgba(255,215,0,${0.6 + pulse*0.4})`;
+    } else {
+      ctx.lineWidth = 1;
+      ctx.strokeStyle="#b91c1c";
+    }
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(c,c);
+    ctx.rotate(s+slice/2);
+    ctx.textAlign="right";
+    ctx.fillStyle="#7f1d1d";
+    ctx.font = `bold ${Math.max(12, canvas.width/18)}px system-ui`;
+    ctx.fillText(t, r-12, 6);
+    ctx.restore();
+  });
+}
+
+function animateHighlight(){
+  if(highlightedIndex !== -1){
+    highlightPulse += 0.15;
+    drawWheel();
+  }
+  requestAnimationFrame(animateHighlight);
+}
+animateHighlight();
+
+function spin(mode){
+  if(spinning) return;
+  spinning = true;
+  highlightedIndex = -1;
+
+  document.getElementById("wheelWrap").style.display = "block";
+  resizeCanvas();
+
+  const duration = mode === "warmup" ? 3500 : 9000;
+  const start = performance.now();
+  const startRot = rotation;
+  const slice = 2 * Math.PI / rewards.length;
+
+  let target;
+  if(mode === "real"){
+    const forceIndex = rewards.indexOf("500 cá");
+    const targetAngle = (forceIndex + 0.5) * slice;
+    target = startRot + Math.PI * 10 + (Math.PI/2 - targetAngle);
+  } else {
+    const randomIndex = Math.floor(Math.random() * rewards.length);
+    const targetAngle = (randomIndex + 0.5) * slice;
+    target = startRot + Math.PI * 6 + (Math.PI/2 - targetAngle);
+  }
+
+  function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+
+  function animate(now){
+    const p = Math.min((now - start) / duration, 1);
+    const eased = easeOutCubic(p);
+    rotation = (startRot + (target - startRot) * eased) % (Math.PI * 2);
+
+    const currentSlice = Math.floor(((rotation + Math.PI/2) % (Math.PI*2)) / slice);
+    if(currentSlice !== lastSliceIndex){
+      const strength = Math.min(1, Math.abs(pointerVel) * 4 + 0.15);
+      playImpactSound(strength, false);
+      lastSliceIndex = currentSlice;
+    }
+
+    drawWheel();
+    updatePointerPhysics();
+
+    if(p < 1) requestAnimationFrame(animate);
+    else {
+      spinning = false;
+      lastSliceIndex = -1;
+      playImpactSound(1, true);
+
+      const finalIndex = (rewards.length - Math.floor(((rotation % (Math.PI*2) + Math.PI*2) % (Math.PI*2)) / slice) - 1) % rewards.length;
+      const rewardText = rewards[finalIndex];
+
+      highlightedIndex = finalIndex;
+      highlightPulse = 0;
+
+      if(mode === "real"){
+        playJackpotSound();
+        showWinModal("500 cá");
+        localStorage.setItem("playedReal", "1");
+
+        const realBtn = document.getElementById("realBtn");
+        const playedNote = document.getElementById("playedNote");
+        if(realBtn) realBtn.style.display = "none";
+        if(playedNote) playedNote.style.display = "block";
+      } else {
+        showWinModal(rewardText);
+      }
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+const modal = document.getElementById("winModal");
+const winText = document.getElementById("winText");
+const fwCanvas = document.getElementById("fireworks");
+const fwCtx = fwCanvas.getContext("2d");
+
+function resizeFW(){ fwCanvas.width = innerWidth; fwCanvas.height = innerHeight; }
+resizeFW(); window.addEventListener("resize", resizeFW);
+
+let fwParticles = [], fwLoop, fwRunning = false;
+
+function jackpotFlashMulti(){
+  let flashes = 3, i = 0;
+  const interval = setInterval(()=>{
+    const flash = document.createElement("div");
+    flash.className = "jackpot-flash";
+    document.body.appendChild(flash);
+    setTimeout(()=>flash.remove(), 120);
+    if(++i >= flashes) clearInterval(interval);
+  }, 150);
+}
+
+function startFireworks(){
+  fwRunning = true;
+  cancelAnimationFrame(fwLoop);
+  fwParticles = [];
+  function launch(){
+    const x = Math.random() * fwCanvas.width;
+    const y = fwCanvas.height * (.2 + Math.random() * .3);
+    for(let i=0;i<60;i++){
+      fwParticles.push({ x,y, vx:(Math.random()-.5)*16, vy:(Math.random()-.5)*16, life: 70 + Math.random()*30 });
+    }
+  }
+  function loop(){
+    if(!fwRunning) return;
+    fwCtx.clearRect(0,0,fwCanvas.width,fwCanvas.height);
+    fwParticles.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.vy+=0.05; p.life--;
+      fwCtx.beginPath();
+      fwCtx.arc(p.x,p.y,5,0,Math.PI*2);
+      fwCtx.fillStyle="rgba(253,224,71,.95)";
+      fwCtx.fill();
+    });
+    fwParticles = fwParticles.filter(p=>p.life>0);
+    if(Math.random()<0.12) launch();
+    fwLoop = requestAnimationFrame(loop);
+  }
+  launch(); loop();
+}
+
+function startLuckyRain(){
+  const end = Date.now() + 4500;
+  const timer = setInterval(()=>{
+    const l = document.createElement("div");
+    l.className = "lixi";
+    l.innerText = "500 cá";
+    l.style.left = Math.random()*100 + "vw";
+    l.style.animationDuration = 3 + Math.random()*2 + "s";
+    document.body.appendChild(l);
+    setTimeout(()=>l.remove(), 6000);
+    if(Date.now() > end) clearInterval(timer);
+  }, 160);
+}
+
+function showWinModal(text){
+  winText.innerText = "Bạn trúng: " + text;
+  modal.classList.add("show");
+  jackpotFlashMulti();
+  startFireworks();
+  startLuckyRain();
+}
+function closeModal(){
+  modal.classList.remove("show");
+  stopFireworks();
+}
+function stopFireworks(){
+  fwRunning = false;
+  cancelAnimationFrame(fwLoop);
+  fwParticles = [];
+  fwCtx.clearRect(0,0,fwCanvas.width,fwCanvas.height);
+}
+
+window.addEventListener("load", () => {
+  const realBtn = document.getElementById("realBtn");
+  const playedNote = document.getElementById("playedNote");
+  if (localStorage.getItem("playedReal")) {
+    if(realBtn) realBtn.style.display = "none";
+    if(playedNote) playedNote.style.display = "block";
+  }
+});
+</script>
+
+</body>
+</html>
