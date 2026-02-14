@@ -112,13 +112,13 @@
 <h1>🧧 Lì xì nhân phẩm 🧧</h1>
 
 <div id="flow">
-  <button onclick="startFlow()">Test nhân phẩm đầu năm</button>
+  <button onclick="startFlow()">Thử nhân phẩm đầu năm</button>
   <div id="modePanel" style="display:none">
     <div class="mode">
-      <button onclick="spin('warmup')">🎯 Quay thử</button>
-      <button id="realBtn" onclick="spin('real')">🔥 Chơi luôn</button>
+      <button onclick="spin('warmup')">🎯 gieo quẻ thử</button>
+      <button id="realBtn" onclick="spin('real')">🔥 Chơi nuôn</button>
     </div>
-    <div class="note">Mỗi người tối đa 1 lần chơi thật</div>
+    <div class="note"> 1 lần chơi thật xịt đợi năm sau </div>
     <div id="playedNote" class="played-note" style="display:none">Bạn đã chơi hôm nay</div>
   </div>
 </div>
@@ -426,7 +426,7 @@ function startLuckyRain(){
 }
 
 function showWinModal(text){
-  winText.innerText = "Bạn trúng: " + text;
+  winText.innerText = "Lệ đã trúng: " + text;
   modal.classList.add("show");
   jackpotFlashMulti();
   startFireworks();
