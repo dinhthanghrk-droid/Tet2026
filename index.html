@@ -145,7 +145,7 @@
 <h1>🧧 Lì xì may mắn 🧧</h1>
 
 <div id="flow">
-  <button onclick="startFlow()">Thử vận may đầu năm</button>
+  <button onclick="handleStart()">Thử vận may đầu năm</button>
   <div id="modePanel" style="display:none">
     <div class="mode">
       <button onclick="spin('warmup')">🎯 gieo quẻ thử</button>
@@ -235,6 +235,19 @@ function playJackpotSound(){
   o1.start(); o2.start();
   o1.stop(audioCtx.currentTime + 1.2);
   o2.stop(audioCtx.currentTime + 1.2);
+}
+
+function handleStart(){
+  const bgMusic = document.getElementById("bgMusic");
+
+  bgMusic.volume = 0.6;
+  bgMusic.currentTime = 0;
+
+  bgMusic.play().catch(err=>{
+    console.log("Play failed:", err);
+  });
+
+  startFlow();
 }
 
 function startFlow(){
@@ -502,4 +515,5 @@ window.addEventListener("load", () => {
 
 </body>
 </html>
+
 
