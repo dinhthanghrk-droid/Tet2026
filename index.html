@@ -148,11 +148,11 @@
   <button onclick="startFlow()">Thử vận may đầu năm</button>
   <div id="modePanel" style="display:none">
     <div class="mode">
-      <button onclick="spin('warmup')">🎯 gieo quẻ thử</button>
+      <button onclick="spin('warmup')">🪙 Quay thử 🪙</button>
       <button id="realBtn" onclick="spin('real')">🐳 Chơi nuôn (chỉ có 1 lần) 🐳</button>
     </div>
     
-    <div id="playedNote" class="played-note" style="display:none">Hết lượt rồi, năm sau quay lại</div>
+    <div id="playedNote" class="played-note" style="display:none">Hết lượt rồi, năm sau quay lại tiếp</div>
   </div>
 </div>
 
@@ -355,10 +355,10 @@ if(mode === "real"){
   const forceIndex = rewards.indexOf("500 cá");
   const sliceCenter = forceIndex * slice + slice / 2;
 
-  // 12h thực sự trong hệ vẽ của bạn là góc 0
+  // Xoay góc 12h
   const finalRotation = -sliceCenter;
 
-  // quay thêm nhiều vòng cho đẹp
+  // Xoay thêm
   target = finalRotation + Math.PI * 12;
 
 } else {
@@ -480,7 +480,7 @@ function startLuckyRain(){
 function showWinModal(text){
   winText.innerText = "Lệ đã trúng: " + text;
 
-  // thêm hiệu ứng nhấp nháy
+  // Nhấp nháy
   winText.classList.remove("win-blink");
   void winText.offsetWidth; // reset animation
   winText.classList.add("win-blink");
@@ -514,6 +514,7 @@ window.addEventListener("load", () => {
 
 </body>
 </html>
+
 
 
 
