@@ -139,6 +139,34 @@
   @keyframes petalFall {
     to { transform: translateY(120vh) rotate(360deg); }
   }
+  /* Modal bay bổng hơn */
+.modal-content div:first-child {
+  font-family: 'Dancing Script', cursive;
+  font-size: 30px;
+  letter-spacing: 1px;
+  text-shadow:
+    0 0 8px #facc15,
+    0 0 16px #fde047,
+    0 0 24px #fb7185;
+}
+
+#winText {
+  font-family: 'Dancing Script', cursive;
+  font-size: 36px;
+  letter-spacing: 2px;
+  animation: floatText 2s ease-in-out infinite;
+  text-shadow:
+    0 0 10px #facc15,
+    0 0 20px #fde047,
+    0 0 30px #f97316;
+}
+
+/* Hiệu ứng bay nhẹ */
+@keyframes floatText {
+  0% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-8px) scale(1.05); }
+  100% { transform: translateY(0px) scale(1); }
+}
 </style>
 </head>
 <body>
@@ -515,6 +543,7 @@ window.addEventListener("load", () => {
 
 </body>
 </html>
+
 
 
 
